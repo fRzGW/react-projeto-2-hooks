@@ -1,45 +1,29 @@
+import P from 'prop-types';
 import './App.css';
-import { useState, useEffect } from 'react';
-import userEvent from '@testing-library/user-event';
+import React, { useState, useEffect, useCallback } from 'react';
 
-const eventFn = () => {
-  console.log('h1 clicado');
+const Button = React.memo(function Button({ incrementButton }) {
+  console.log('Filho renderizou');
+  return <button onClick={() => incrementButton(10)}>+</button>;
+});
+
+Button.propTypes = {
+  incrementButton: P.func,
 };
-
-// -> Hooks devem estar no nível superior da função, nunca dentro de blocos, loops, e condicionais.
 
 function App() {
   const [counter, setCounter] = useState(0);
-  const [counter2, setCounter2] = useState(0);
 
-  // componentDidUpdate - executa toda vez que o componente for atualizado
-  // useEffect(() => {
-  //   console.log('componentDidUpdate');
-  // });
-
-  // componentDidMount - executa 1x
-  useEffect(() => {
-    document.querySelector('h1')?.addEventListener('click', eventFn);
-
-    // componentWillUnmount - limpeza pra não bugar o código
-    return () => {
-      document.querySelector('h1')?.removeEventListener('click', eventFn);
-    };
+  const incrementCounter = useCallback((num) => {
+    setCounter((c) => c + num);
   }, []);
 
-  // Com dependencia - executa quando a dependencia mudar
-  useEffect(() => {
-    console.log('C1:', counter, 'C2:', counter2);
-  }, [counter, counter2]); // toda vez que counter mudar
+  console.log('O pai ta renderizado');
 
   return (
     <div className="App">
-      <p>Teste 2</p>
-      <h1>
-        C1: {counter} C2: {counter2}
-      </h1>
-      <button onClick={() => setCounter(counter + 1)}>+</button>
-      <button onClick={() => setCounter2(counter2 + 1)}>+(2)</button>
+      <h1>C1: {counter}</h1>
+      <Button incrementButton={incrementCounter} />
     </div>
   );
 }
