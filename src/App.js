@@ -1,74 +1,74 @@
-import P, { func } from 'prop-types';
-import { useEffect, useState, useMemo, useRef } from 'react';
+import P from 'prop-types';
+import { createContext, useReducer, useContext, useRef } from 'react';
 import './App.css';
 
-const Post = ({ post, handleClick }) => {
-  console.log('Filho renderizou');
-  return (
-    <div key={post.id} className="post">
-      <h1 style={{ fontSize: '14px' }} onClick={() => handleClick(post.title)}>
-        {post.title}
-      </h1>
-      <p>{post.body}</p>
-    </div>
-  );
+// action.js
+export const actions = {
+  CHANGE_TITLE: 'CHANGE_TITLE',
 };
 
-Post.propTypes = {
-  post: P.shape({
-    id: P.number,
-    title: P.string,
-    body: P.string,
-  }),
-  handleClick: P.func,
+// data.js
+export const globalState = {
+  title: 'O titulo que contexto',
+  body: 'O body do contexto',
+  counter: 0,
 };
 
-function App() {
-  const [posts, setPosts] = useState([]);
-  const [value, setValue] = useState('');
-  const input = useRef(null); // cria referencia para alguma coisa
-  const contador = useRef(0);
+// reducer.js
+export const reducer = (state, action) => {
+  switch (action.type) {
+    case actions.CHANGE_TITLE: {
+      console.log('Muda o titulo');
+      return { ...state, title: action.payload };
+    }
+  }
+  return { ...state };
+};
 
-  console.log('Pai renderizou');
+// AppContext.jsx
+export const Context = createContext();
 
-  // Component Did Mount
-  useEffect(() => {
-    fetch('http://jsonplaceholder.typicode.com/posts')
-      .then((response) => response.json())
-      .then((response) => setPosts(response));
-  }, []);
-
-  useEffect(() => {
-    // sempre que value mudar este useEffect vai ser executado
-    input.current.focus();
-    console.log(input.current);
-  }, [value]);
-
-  useEffect(() => {
-    contador.current++;
-  });
-
-  const handleClick = (value) => {
-    setValue(value);
+// eslint-disable-next-line
+export const AppContext = ({ children }) => {
+  const [state, dispatch] = useReducer(reducer, globalState);
+  const changeTitle = (payload) => {
+    dispatch({ type: 'CHANGE_TITLE', payload });
   };
 
   return (
-    <div className="App">
-      <h1>Rederizou: {contador.current}x</h1>
-      <p>
-        <input
-          ref={input} // damos a referencia ao input
-          type="search"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-        />
-      </p>
-      {useMemo(() => {
-        return posts.map((post) => (
-          <Post key={post.id} post={post} handleClick={handleClick} />
-        ));
-      }, [posts])}
-    </div>
+    <Context.Provider value={{ state, changeTitle }}>
+      {children}
+    </Context.Provider>
+  );
+};
+
+AppContext.propTypes = {
+  children: P.node,
+};
+
+// H1/index.jsx
+export const H1 = () => {
+  const context = useContext(Context);
+  const inputRef = useRef();
+
+  return (
+    <>
+      <h1 onClick={() => context.changeTitle(inputRef.current.value)}>
+        {context.state.title}
+      </h1>
+      <input type="text" ref={inputRef} />
+    </>
+  );
+};
+
+// App.jsx
+function App() {
+  return (
+    <AppContext>
+      <div>
+        <H1 />
+      </div>
+    </AppContext>
   );
 }
 
